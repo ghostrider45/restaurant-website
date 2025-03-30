@@ -127,3 +127,25 @@ Develop the Restaurant Dashboard UI
 Integrate Navigation and Routing for User & Restaurant Portals
 
 Enhance Animations, UI Components, and Responsiveness
+
+Dark Mode Support:
+
+Optional toggle for dark/light mode.
+
+Authentication & Signup for Restaurants
+
+Create a dedicated Sign-in/Sign-up page for restaurants.
+
+Use animations to enhance user experience.
+
+Ensure the best possible visual appeal for the authentication process.
+
+Implement Clerk for authentication.
+
+Development Guidelines
+
+Frontend:
+
+React.js with Tailwind CSS for styling.
+
+Framer Motion for animations.
