@@ -6,17 +6,17 @@ const carouselItems = [
   {
     title: "Delicious Food Delivered",
     description: "Experience the finest cuisine from top restaurants",
-    bgImage: "/hero-bg.jpg"
+    bgImage: process.env.PUBLIC_URL + "/hero-bg.jpg"
   },
   {
     title: "Quick & Easy Ordering",
     description: "Order your favorite meals with just a few clicks",
-    bgImage: "/hero-bg-2.jpg"
+    bgImage: process.env.PUBLIC_URL + "/hero-bg-2.jpg"
   },
   {
     title: "Fresh & Quality Food",
     description: "Prepared with love and delivered with care",
-    bgImage: "/hero-bg-3.jpg"
+    bgImage: process.env.PUBLIC_URL + "/hero-bg-3.jpg"
   }
 ];
 

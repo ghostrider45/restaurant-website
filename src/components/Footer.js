@@ -29,7 +29,7 @@ const Footer = () => {
               {['facebook', 'twitter', 'instagram', 'youtube'].map((social) => (
                 <motion.a
                   key={social}
-                  href={`https://${social}.com`}
+                  href={`https://www.${social}.com`}
                   target="_blank"
                   rel="noopener noreferrer"
                   whileHover={{ scale: 1.1, color: '#f97316' }}

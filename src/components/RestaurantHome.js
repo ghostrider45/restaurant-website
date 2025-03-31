@@ -1,8 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const RestaurantHome = () => {
+  const { signOut } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -17,7 +20,10 @@ const RestaurantHome = () => {
               >
                 Back to Home
               </Link>
-              <button className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
+              <button 
+                onClick={() => signOut()}
+                className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors"
+              >
                 Logout
               </button>
             </div>

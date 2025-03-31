@@ -2,12 +2,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import DarkModeToggle from './DarkModeToggle';
+import TestConnection from './TestConnection';
 
 const MainHome = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Add this with more visible styling */}
+      <div className="bg-yellow-100 p-4 text-center">
+        <TestConnection />
+      </div>
+      
       {/* Navigation */}
       <nav className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="container mx-auto px-4 py-4">
@@ -69,7 +75,7 @@ const MainHome = () => {
             className="relative"
           >
             <img
-              src="/hero-image.jpg"
+              src={process.env.PUBLIC_URL + '/hero-image.jpg'}
               alt="Delicious Food"
               className="rounded-lg shadow-2xl"
             />

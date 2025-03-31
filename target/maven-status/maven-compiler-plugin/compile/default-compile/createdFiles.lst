@@ -1,0 +1,9 @@
+com\foodexpress\config\CorsConfig.class
+com\foodexpress\model\Restaurant.class
+com\foodexpress\service\RestaurantService.class
+com\foodexpress\config\FirebaseConfig.class
+com\foodexpress\controller\RestaurantController.class
+com\foodexpress\config\WebConfig.class
+com\foodexpress\FoodExpressApplication.class
+com\foodexpress\model\Restaurant$RestaurantBuilder.class
+com\foodexpress\controller\HealthController.class
