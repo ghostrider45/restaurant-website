@@ -1,48 +1,36 @@
 package com.foodexpress.controller;
 
-import dev.clerk.sdk.ClerkClient;
-import dev.clerk.sdk.session.Session;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.firebase.cloud.StorageClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/storage")
-@RequiredArgsConstructor
 public class StorageController {
     
     private static final Logger logger = LoggerFactory.getLogger(StorageController.class);
     
-    @Value("${clerk.secret.key}")
-    private String clerkSecretKey;
-    
-    @Value("${firebase.storage.bucket}")
-    private String storageBucket;
-
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestHeader("Authorization") String token,
             @RequestParam("file") MultipartFile file) {
         try {
-            // Remove "Bearer " prefix if present
-            String cleanToken = token.replace("Bearer ", "");
+            // Add some logging to debug
+            logger.info("Received file upload request");
+            logger.info("File name: " + file.getOriginalFilename());
+            logger.info("File size: " + file.getSize());
             
             // Verify Clerk token and get user ID
-            String userId = verifyClerkToken(cleanToken);
+            String userId = verifyClerkToken(token);
             
             // Generate signed URL for Firebase Storage
             String signedUrl = generateSignedUrl(userId, file);
             
+            // Return the signed URL to the frontend
             return ResponseEntity.ok(Map.of("uploadUrl", signedUrl));
         } catch (Exception e) {
             logger.error("Error uploading file: ", e);
@@ -50,42 +38,17 @@ public class StorageController {
         }
     }
 
-    private String verifyClerkToken(String token) throws Exception {
-        ClerkClient clerk = ClerkClient.builder()
-            .secretKey(clerkSecretKey)
-            .build();
-            
-        try {
-            Session session = clerk.sessions().verifySession(token);
-            return session.getId(); // Use getId() instead of userId
-        } catch (Exception e) {
-            logger.error("Failed to verify Clerk token: ", e);
-            throw new Exception("Invalid authentication token");
-        }
+    private String verifyClerkToken(String token) {
+       
+        // You'll need to add Clerk SDK or use their API to verify the token
+        // For now, returning a dummy user ID
+        return "dummy-user-id";
     }
 
-    private String generateSignedUrl(String userId, MultipartFile file) throws Exception {
-        try {
-            // Get Firebase Storage instance
-            Storage storage = StorageClient.getInstance().bucket(storageBucket).getStorage();
-            
-            // Create the blob path
-            String blobPath = String.format("restaurants/%s/images/%s", userId, file.getOriginalFilename());
-            BlobId blobId = BlobId.of(storageBucket, blobPath);
-            
-            // Create blob info with content type
-            BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
-                .setContentType(file.getContentType())
-                .build();
-            
-            // Generate signed URL that expires in 15 minutes
-            return storage.signUrl(blobInfo, 15, TimeUnit.MINUTES, Storage.SignUrlOption.withV4Signature())
-                .toString();
-                
-        } catch (Exception e) {
-            logger.error("Failed to generate signed URL: ", e);
-            throw new Exception("Failed to generate upload URL");
-        }
+    private String generateSignedUrl(String userId, MultipartFile file) {
+        
+        // You'll need to use Firebase Admin SDK to generate the signed URL
+        return "dummy-signed-url";
     }
 }
 

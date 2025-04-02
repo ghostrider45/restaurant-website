@@ -2,23 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { motion } from 'framer-motion';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../config/firebase';
+import { uploadFileToStorage } from '../../utils/firebaseStorage';
+import { saveToFirestore } from '../../utils/firestoreUtils';
+import FirestoreTest from '../FirestoreTest';
 
 const cuisineOptions = [
-  'Italian', 'Indian', 'Chinese', 'Japanese', 'Mexican', 
+  'Italian', 'Indian', 'Chinese', 'Japanese', 'Mexican',
   'Thai', 'American', 'Mediterranean', 'French', 'Korean'
 ];
 
 const ProfileSetup = () => {
-  const { user, getToken } = useUser();
+  const { user } = useUser();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
+    ownerName: '',
+    restaurantName: '',
     email: '',
     phone: '',
     fssaiLicense: '',
@@ -37,7 +39,7 @@ const ProfileSetup = () => {
       // Auto-fill data from Clerk user
       setFormData(prev => ({
         ...prev,
-        name: `${user.firstName} ${user.lastName}`,
+        ownerName: `${user.firstName} ${user.lastName}`,
         email: user.emailAddresses[0].emailAddress,
         phone: user.phoneNumbers[0]?.phoneNumber || ''
       }));
@@ -73,7 +75,7 @@ const ProfileSetup = () => {
         alert('Image size should be less than 5MB');
         return;
       }
-      
+
       setImageFile(file);
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
@@ -82,27 +84,16 @@ const ProfileSetup = () => {
 
   const uploadImage = async (userId, file) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      console.log('Uploading image directly to Firebase Storage');
+      console.log('User ID:', userId);
+      console.log('File:', file.name, file.type, file.size);
 
-      const response = await fetch('/api/storage/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${await getToken()}` // Get Clerk token
-        },
-        body: formData
-      });
+      // Use the direct Firebase Storage upload utility
+      // We're no longer using the folder parameter to simplify the structure
+      const result = await uploadFileToStorage(userId, file);
+      console.log('Upload successful:', result);
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const { uploadUrl } = await response.json();
-      
-      return {
-        url: uploadUrl,
-        path: `restaurants/${userId}/images/${file.name}`
-      };
+      return result;
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
@@ -114,14 +105,24 @@ const ProfileSetup = () => {
     setSaving(true);
 
     try {
+      // Step 1: Upload image if provided
       let imageData = null;
       if (imageFile) {
-        imageData = await uploadImage(user.id, imageFile);
+        try {
+          imageData = await uploadImage(user.id, imageFile);
+          console.log('Image uploaded successfully:', imageData);
+        } catch (imageError) {
+          console.error('Error uploading image:', imageError);
+          // Continue with profile creation even if image upload fails
+          alert(`Image upload failed: ${imageError.message}. Your profile will be saved without an image.`);
+        }
       }
 
+      // Step 2: Create restaurant data object
       const restaurantData = {
         id: user.id,
-        name: formData.name,
+        ownerName: formData.ownerName,
+        restaurantName: formData.restaurantName,
         email: formData.email,
         phone: formData.phone,
         fssaiLicense: formData.fssaiLicense,
@@ -135,16 +136,26 @@ const ProfileSetup = () => {
         pincode: formData.pincode,
         restaurantImage: imageData,
         isProfileComplete: true,
-        isVerified: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        isVerified: false
+        // Timestamps will be added by the saveToFirestore utility
       };
 
-      await setDoc(doc(db, 'restaurants', user.id), restaurantData);
+      // Step 3: Save to Firestore using our utility function
+      console.log('Saving restaurant data to Firestore:', restaurantData);
+      try {
+        await saveToFirestore('restaurants', user.id, restaurantData, true); // true for merge
+        console.log('Restaurant data saved successfully');
+      } catch (firestoreError) {
+        console.error('Firestore error details:', firestoreError.code, firestoreError.message);
+        throw firestoreError;
+      }
+
+      // Step 4: Navigate to dashboard
+      console.log('Profile setup complete, navigating to dashboard');
       navigate('/restaurant/dashboard');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(`Failed to update profile: ${error.message}. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -157,23 +168,39 @@ const ProfileSetup = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
+        {/* Firestore Test Component */}
+        <div className="max-w-3xl mx-auto mb-6">
+          <FirestoreTest />
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-8"
         >
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Complete Your Restaurant Profile</h1>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Auto-filled fields from Clerk */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
+                <label className="block text-sm font-medium text-gray-700">Owner Name</label>
                 <input
                   type="text"
-                  value={formData.name}
+                  value={formData.ownerName}
                   disabled
                   className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Restaurant Name</label>
+                <input
+                  type="text"
+                  name="restaurantName"
+                  value={formData.restaurantName}
+                  onChange={handleInputChange}
+                  required
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
                 />
               </div>
               <div>
@@ -346,7 +373,7 @@ const ProfileSetup = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 
+                className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600
                          transition-colors disabled:bg-orange-300 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Complete Profile'}
@@ -360,6 +387,10 @@ const ProfileSetup = () => {
 };
 
 export default ProfileSetup;
+
+
+
+
 
 
 

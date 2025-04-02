@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -18,10 +18,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// If in development, you might want to use the emulator
-if (process.env.NODE_ENV === 'development') {
-  connectStorageEmulator(storage, 'localhost', 9199);
-}
+// Disable emulator connection for now
+// if (process.env.NODE_ENV === 'development') {
+//   connectStorageEmulator(storage, 'localhost', 9199);
+// }
 
 export { db, storage };
 export default app;

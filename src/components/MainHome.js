@@ -9,11 +9,13 @@ const MainHome = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Add this with more visible styling */}
-      <div className="bg-yellow-100 p-4 text-center">
-        <TestConnection />
+      {/* Connection test banner */}
+      <div className="bg-yellow-100 p-4 text-center shadow-md">
+        <div className="max-w-3xl mx-auto">
+          <TestConnection />
+        </div>
       </div>
-      
+
       {/* Navigation */}
       <nav className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="container mx-auto px-4 py-4">
@@ -155,4 +157,4 @@ const MainHome = () => {
   );
 };
 
-export default MainHome; 
+export default MainHome;
