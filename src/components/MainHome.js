@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+// No need for Firebase imports for this component
 import DarkModeToggle from './DarkModeToggle';
 import TestConnection from './TestConnection';
 
 const MainHome = () => {
   const navigate = useNavigate();
+  const { isSignedIn } = useUser();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800">
@@ -57,7 +60,16 @@ const MainHome = () => {
             </p>
             <div className="space-x-4">
               <button
-                onClick={() => navigate('/user/')}
+                onClick={async () => {
+                  if (!isSignedIn) {
+                    // If not signed in, go to sign-up page
+                    navigate('/user/sign-up');
+                    return;
+                  }
+
+                  // If signed in, go directly to order food page
+                  navigate('/user/order-food');
+                }}
                 className="px-8 py-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors inline-block"
               >
                 Order Food

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { uploadFileToStorage } from '../../../utils/firebaseStorage';
 import { getMenuItems, updateMenuItem, updateMenuItemAvailability, deleteMenuItem } from '../../../utils/menuUtils';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
 
 // Menu categories - same as in AddMenuItem for consistency
 const predefinedCategories = [

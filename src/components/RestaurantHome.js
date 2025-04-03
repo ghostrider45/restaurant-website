@@ -1,10 +1,50 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { useAuth } from '../context/AuthContext';
 
 const RestaurantHome = () => {
   const { signOut } = useAuth();
+  const { isSignedIn, isLoaded, user } = useUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!isLoaded) return;
+
+      if (!isSignedIn) {
+        console.log('User not signed in, redirecting to sign-in page');
+        navigate('/restaurant/sign-in');
+        return;
+      }
+
+      console.log('Checking if user is a restaurant owner:', user.id);
+
+      try {
+        // Check if user exists in restaurants collection
+        const restaurantDocRef = doc(db, 'restaurants', user.id);
+        console.log('Checking restaurant document at path:', restaurantDocRef.path);
+
+        const restaurantDoc = await getDoc(restaurantDocRef);
+        console.log('Restaurant document exists:', restaurantDoc.exists());
+
+        if (!restaurantDoc.exists()) {
+          console.log('User is not a restaurant owner, redirecting to unauthorized');
+          // If not a restaurant owner, redirect to unauthorized
+          navigate('/unauthorized');
+        } else {
+          console.log('User is a restaurant owner, data:', restaurantDoc.data());
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+
+    checkUserRole();
+  }, [isLoaded, isSignedIn, user, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -20,7 +60,7 @@ const RestaurantHome = () => {
               >
                 Back to Home
               </Link>
-              <button 
+              <button
                 onClick={() => signOut()}
                 className="px-6 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors"
               >
@@ -213,4 +253,4 @@ const RestaurantHome = () => {
   );
 };
 
-export default RestaurantHome; 
+export default RestaurantHome;

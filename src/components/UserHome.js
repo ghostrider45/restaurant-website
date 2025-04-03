@@ -1,58 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Navbar from './Navbar';
-import Hero from './Hero';
-import Categories from './Categories';
-import FeaturedRestaurants from './FeaturedRestaurants';
-import PopularItems from './PopularItems';
-import Testimonials from './Testimonials';
-import Footer from './Footer';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import CustomerDashboard from './customer/CustomerDashboard';
 
 const UserHome = () => {
-  const [loading, setLoading] = useState(true);
+  const { isSignedIn, isLoaded, user } = useUser();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    const checkUserRole = async () => {
+      if (!isLoaded) return;
 
-    return () => clearTimeout(timer);
-  }, []);
+      if (!isSignedIn) {
+        console.log('User not signed in, redirecting to sign-in page');
+        navigate('/user/sign-in');
+        return;
+      }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <AnimatePresence mode='wait'>
-        {loading ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-white z-50"
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading...</p>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <Navbar />
-            <Hero />
-            <Categories />
-            <FeaturedRestaurants />
-            <PopularItems />
-            <Testimonials />
-            <Footer />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+      console.log('Checking user role for user ID:', user.id);
+
+      try {
+        // Check if user exists in customers collection
+        const customerDocRef = doc(db, 'customers', user.id);
+        console.log('Checking customer document at path:', customerDocRef.path);
+
+        const customerDoc = await getDoc(customerDocRef);
+        console.log('Customer document exists:', customerDoc.exists());
+
+        // Check if user exists in restaurants collection
+        const restaurantDocRef = doc(db, 'restaurants', user.id);
+        const restaurantDoc = await getDoc(restaurantDocRef);
+
+        if (restaurantDoc.exists()) {
+          // If user is a restaurant owner, they should use the restaurant interface
+          console.log('User is a restaurant owner, suggesting to use restaurant interface');
+          // We'll just log this but not redirect, to allow restaurant owners to browse as users too
+        }
+
+        if (!customerDoc.exists()) {
+          console.log('User is not yet in customers collection, adding them');
+          // If user is not in customers collection, add them
+          const customerData = {
+            id: user.id,
+            role: 'customer',
+            name: user.fullName || '',
+            email: user.primaryEmailAddress?.emailAddress || '',
+            phone: user.primaryPhoneNumber?.phoneNumber || '',
+            address: '',
+            city: '',
+            state: '',
+            pincode: '',
+            isVerified: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          await setDoc(doc(db, 'customers', user.id), customerData);
+          console.log('Added user to customers collection');
+        } else {
+          console.log('User is a customer, data:', customerDoc.data());
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+
+    checkUserRole();
+  }, [isLoaded, isSignedIn, user, navigate]);
+
+  if (!isLoaded || !isSignedIn) {
+    return null; // Return nothing while checking auth to avoid flash
+  }
+
+  return <CustomerDashboard />;
 };
 
-export default UserHome; 
+export default UserHome;

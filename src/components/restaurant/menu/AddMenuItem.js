@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { uploadFileToStorage } from '../../../utils/firebaseStorage';
 import { addMenuItem } from '../../../utils/menuUtils';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../config/firebase';
 
 // Menu categories
 const categories = [
@@ -111,8 +113,12 @@ const AddMenuItem = () => {
       // Step 3: Save to Firestore
       console.log('Saving menu item to Firestore:', menuItemData);
 
+      // Get restaurant data to include restaurant name
+      const restaurantDoc = await getDoc(doc(db, 'restaurants', user.id));
+      const restaurantName = restaurantDoc.exists() ? restaurantDoc.data().name : 'Unknown Restaurant';
+
       // Use our utility function to add the menu item to Firestore
-      const savedItem = await addMenuItem(user.id, menuItemData);
+      const savedItem = await addMenuItem(user.id, restaurantName, menuItemData);
       console.log('Menu item saved successfully with ID:', savedItem.id);
 
       // Reset form
