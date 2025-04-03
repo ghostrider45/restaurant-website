@@ -3,6 +3,21 @@ import { useUser } from '@clerk/clerk-react';
 import { uploadFileToStorage } from '../../../utils/firebaseStorage';
 import { getMenuItems, updateMenuItem, updateMenuItemAvailability, deleteMenuItem } from '../../../utils/menuUtils';
 
+// Menu categories - same as in AddMenuItem for consistency
+const predefinedCategories = [
+  'Fast Food',
+  'Soups',
+  'Salads',
+  'Main Course',
+  'Sides',
+  'Desserts',
+  'Beverages',
+  'Specials',
+  'Breakfast',
+  'Lunch',
+  'Dinner'
+];
+
 const ManageMenu = () => {
   const { user } = useUser();
   const [menuItems, setMenuItems] = useState([]);
@@ -12,6 +27,7 @@ const ManageMenu = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     const fetchMenuItems = async () => {
@@ -37,7 +53,7 @@ const ManageMenu = () => {
             name: 'Margherita Pizza',
             description: 'Classic pizza with tomato sauce, mozzarella, and basil',
             price: 299,
-            category: 'Main Course',
+            category: 'Fast Food',
             isVegetarian: true,
             isVegan: false,
             isGlutenFree: false,
@@ -89,9 +105,15 @@ const ManageMenu = () => {
         const items = menuItemsCollection && menuItemsCollection.length > 0 ? menuItemsCollection : sampleMenuItems;
         setMenuItems(items);
 
-        // Extract unique categories
-        const uniqueCategories = [...new Set(items.map(item => item.category))];
-        setCategories(uniqueCategories);
+        // Extract unique categories from existing items
+        let existingCategories = [...new Set(items.map(item => item.category))];
+
+        // Remove 'Appetizers' from existing categories if present
+        existingCategories = existingCategories.filter(category => category !== 'Appetizers');
+
+        // Combine with predefined categories and remove duplicates
+        const allCategories = [...new Set([...predefinedCategories, ...existingCategories])];
+        setCategories(allCategories);
 
         console.log('Menu items loaded:', items.length);
       } catch (error) {
@@ -184,6 +206,15 @@ const ManageMenu = () => {
     setEditingItem(null);
     setImageFile(null);
     setImagePreview(null);
+  };
+
+  const handleCategoryClick = (category) => {
+    // If clicking the already selected category, clear the filter
+    if (selectedCategory === category) {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(category);
+    }
   };
 
   const handleToggleAvailability = async (id, currentStatus) => {
@@ -437,20 +468,33 @@ const ManageMenu = () => {
       ) : (
         <div className="space-y-6">
           {/* Category filters */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-4">
             {categories.map(category => (
               <span
                 key={category}
-                className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm cursor-pointer hover:bg-orange-200"
+                onClick={() => handleCategoryClick(category)}
+                className={`px-3 py-1 rounded-full text-sm cursor-pointer transition-colors ${selectedCategory === category
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}
               >
-                {category}
+                {category} {selectedCategory === category && '✓'}
               </span>
             ))}
+            {selectedCategory && (
+              <span
+                onClick={() => setSelectedCategory(null)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm cursor-pointer hover:bg-gray-300"
+              >
+                Clear Filter
+              </span>
+            )}
           </div>
 
           {/* Menu items list */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {menuItems.map(item => (
+            {menuItems
+              .filter(item => selectedCategory ? item.category === selectedCategory : true)
+              .map(item => (
               <div
                 key={item.id}
                 className={`border rounded-lg overflow-hidden flex ${!item.isAvailable ? 'opacity-60' : ''}`}

@@ -67,6 +67,14 @@ restaurant-website/
 - Clerk account
 - Java Development Kit (JDK) for backend
 
+### Environment Variables
+
+**IMPORTANT: Security Notice**
+
+This project uses environment variables for sensitive information like API keys. Never commit your `.env` file to version control.
+
+See [ENV_SETUP.md](ENV_SETUP.md) for detailed instructions on setting up environment variables and [remove-env-from-git.md](remove-env-from-git.md) if you need to remove sensitive data from Git history.
+
 ### Installation
 
 1. Clone the repository:
@@ -116,7 +124,7 @@ service cloud.firestore {
     match /restaurants/{restaurantId} {
       allow read: if true;
       allow write: if true;
-      
+
       match /menuItems/{menuItemId} {
         allow read: if true;
         allow write: if true;

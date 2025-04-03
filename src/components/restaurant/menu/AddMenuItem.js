@@ -5,7 +5,7 @@ import { addMenuItem } from '../../../utils/menuUtils';
 
 // Menu categories
 const categories = [
-  'Appetizers',
+  'Fast Food',
   'Soups',
   'Salads',
   'Main Course',
